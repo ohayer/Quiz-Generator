@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import List
-from pdf.toc.configuration import ToCConfiguration
+from .configuration import ToCConfiguration
 
 
 class TextCleaner:

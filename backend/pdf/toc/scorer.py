@@ -1,6 +1,6 @@
 from typing import List
-from pdf.toc.configuration import ToCConfiguration
-from pdf.toc.page import ToCStyle
+from .configuration import ToCConfiguration
+from .page import ToCStyle
 
 class ToCScorer:
     """Compute confidence scores and extract page style fingerprints."""

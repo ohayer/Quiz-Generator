@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Tuple
-from pdf.regexChecker import RegexChecker
+from .regex_checker import RegexChecker
 
 @dataclass
 class ToCConfiguration:

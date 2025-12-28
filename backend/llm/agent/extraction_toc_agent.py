@@ -5,12 +5,11 @@ from typing import Optional
 
 import fitz
 
-from llm.config import load_settings
-from llm.model import LangChainConnection
-from llm.rag_service import LangChainRAGService
-from pdf.toc.manual_extractor import ManualToCExtractor
-from pdf.toc.toc_model import TableOfContents, Section
-
+from .config import load_settings
+from .model import LangChainConnection
+from .rag_service import LangChainRAGService
+from backend.pdf.toc.manual_extractor import ManualToCExtractor
+from backend.pdf.toc.toc_model import Section, TableOfContents
 
 SYSTEM_MESSAGE = """You are a precision parser for Table of Contents.
 Your task is to flatten the Table of Contents into a single list of items.
@@ -23,18 +22,13 @@ RULES:
 3. Extract the "start_page" as an integer.
 4. Ignore lines that do not contain a page number (e.g. headers like "Table of Contents")."""
 
-
-# Default factories keep heavy dependencies constructed once per extractor instance
-# and make the class easier to test by injecting alternatives.
 def _default_rag() -> LangChainRAGService:
     settings = load_settings()
     connection = LangChainConnection(settings)
     return LangChainRAGService(connection, system_prompt=SYSTEM_MESSAGE)
 
-
 def _default_manual_extractor() -> ManualToCExtractor:
     return ManualToCExtractor()
-
 
 @dataclass
 class ToCExtractor:
@@ -57,7 +51,7 @@ class ToCExtractor:
         for item in toc_fitz:
             try:
                 title = item[1]
-                page = item[2]
+                page = int(item[2])
                 additional_info = item[3] if len(item) > 3 else {}
             except Exception:
                 continue
@@ -68,10 +62,8 @@ class ToCExtractor:
 
             section_number = section_ref.split(".", 1)[1] or section_ref
             try:
-                toc_section = Section(section_number=section_number, title=title, start_page=int(page))
-                sections.append(toc_section)
+                sections.append(Section(section_number=section_number, title=title, start_page=page))
             except Exception:
-                # Skip malformed entries instead of failing the whole extraction
                 continue
 
         if not sections:

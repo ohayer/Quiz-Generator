@@ -5,7 +5,7 @@ from enum import Enum
 
 from langchain_openai import ChatOpenAI
 
-from llm.config import Settings, load_settings
+from backend.llm.config import Settings, load_settings
 
 
 @dataclass(frozen=True)

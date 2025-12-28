@@ -1,10 +1,10 @@
 from typing import List, Optional
 from fitz import Document
 
-from pdf.toc.configuration import ToCConfiguration
-from pdf.toc.text_cleaner import TextCleaner
-from pdf.toc.scorer import ToCScorer
-from pdf.toc.page import ToCPage, ScoredPage
+from .configuration import ToCConfiguration
+from .text_cleaner import TextCleaner
+from .scorer import ToCScorer
+from .page import ToCPage, ScoredPage
 
 class ManualToCExtractor:
     """Table-of-Contents extractor orchestrating cleaning and scoring.
