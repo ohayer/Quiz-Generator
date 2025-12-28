@@ -12,8 +12,6 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class LangChainRAGService:
-    """Lightweight LangChain helper that answers with optional user-provided context."""
-
     def __init__(
         self,
         connection: LangChainConnection,
@@ -23,7 +21,6 @@ class LangChainRAGService:
         self.system_prompt = system_prompt
 
     def answer(self, question: str, context: str = "") -> str:
-        """Return a free-form answer. If context is provided, it is injected into the prompt."""
         chain = self._build_chain(structured_model=None)
         return chain.invoke({"question": question, "context": context})
 

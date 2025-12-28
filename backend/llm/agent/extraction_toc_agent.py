@@ -5,9 +5,10 @@ from typing import Optional
 
 import fitz
 
-from .config import load_settings
-from .model import LangChainConnection
-from .rag_service import LangChainRAGService
+from backend.llm.config import load_settings
+from backend.llm.model import LangChainConnection
+from backend.llm.rag_service import LangChainRAGService
+
 from backend.pdf.toc.manual_extractor import ManualToCExtractor
 from backend.pdf.toc.toc_model import Section, TableOfContents
 
@@ -22,19 +23,24 @@ RULES:
 3. Extract the "start_page" as an integer.
 4. Ignore lines that do not contain a page number (e.g. headers like "Table of Contents")."""
 
+
 def _default_rag() -> LangChainRAGService:
     settings = load_settings()
     connection = LangChainConnection(settings)
     return LangChainRAGService(connection, system_prompt=SYSTEM_MESSAGE)
 
+
 def _default_manual_extractor() -> ManualToCExtractor:
     return ManualToCExtractor()
+
 
 @dataclass
 class ToCExtractor:
     doc: fitz.Document
     rag: LangChainRAGService = field(default_factory=_default_rag)
-    manual_extractor: ManualToCExtractor = field(default_factory=_default_manual_extractor)
+    manual_extractor: ManualToCExtractor = field(
+        default_factory=_default_manual_extractor
+    )
 
     def extract_toc(self) -> Optional[TableOfContents]:
         toc = self._extract_toc_by_fitz()
@@ -56,13 +62,19 @@ class ToCExtractor:
             except Exception:
                 continue
 
-            section_ref = additional_info.get("nameddest") if isinstance(additional_info, dict) else None
+            section_ref = (
+                additional_info.get("nameddest")
+                if isinstance(additional_info, dict)
+                else None
+            )
             if not section_ref or "." not in section_ref:
                 continue
 
             section_number = section_ref.split(".", 1)[1] or section_ref
             try:
-                sections.append(Section(section_number=section_number, title=title, start_page=page))
+                sections.append(
+                    Section(section_number=section_number, title=title, start_page=page)
+                )
             except Exception:
                 continue
 
@@ -79,7 +91,9 @@ class ToCExtractor:
         toc_as_string = "\n".join(text)
         return self._convert_toc_text_into_toc_object_with_llm(toc_as_string)
 
-    def _convert_toc_text_into_toc_object_with_llm(self, toc_text: str) -> Optional[TableOfContents]:
+    def _convert_toc_text_into_toc_object_with_llm(
+        self, toc_text: str
+    ) -> Optional[TableOfContents]:
         question = (
             "Here is the raw text of the Table of Contents. Please process it according to the system instructions.\n"
             "<toc_content>\n"

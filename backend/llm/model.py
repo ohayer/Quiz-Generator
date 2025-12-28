@@ -37,8 +37,6 @@ class ModelProfile(Enum):
 
 
 class LangChainConnection:
-    """Lightweight LangChain client wrapper keeping model selection together with shared settings."""
-
     def __init__(
         self,
         settings: Settings | None = None,
@@ -47,11 +45,11 @@ class LangChainConnection:
     ) -> None:
         self.settings = settings or load_settings()
         self.model = model or ModelProfile.from_model_id(self.settings.default_model)
-        
+
         # model nano can only have temperature 1
-        if self.model == ModelProfile.NANO:        
+        if self.model == ModelProfile.NANO:
             temperature = 1
-    
+
         self.chat_model = ChatOpenAI(
             model=self.model.model_id,
             api_key=self.settings.api_key,
