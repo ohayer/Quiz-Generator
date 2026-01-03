@@ -1,5 +1,5 @@
 import React from 'react';
-import type { TableOfContents } from '../types';
+import type { TableOfContents } from '../../types';
 
 interface TocViewerProps {
     toc: TableOfContents;

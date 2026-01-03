@@ -1,4 +1,4 @@
-import type { TableOfContents } from '../types';
+import type { TableOfContents } from '../../types';
 
 interface ResultsViewProps {
     toc?: TableOfContents;

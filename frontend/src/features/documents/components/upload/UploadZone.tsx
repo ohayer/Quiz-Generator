@@ -55,7 +55,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelected, disabled
                 {!disabled && (
                     <button
                         onClick={handleRemove}
-                        className="p-2 hover:bg-red-500/10 text-slate-400 hover:text-red-400 rounded-md transition-colors"
+                        className="p-2 hover:bg-red-500/10 text-slate-400 hover:text-red-400 rounded-md transition-colors cursor-pointer"
                         title="Remove file"
                     >
                         ✕

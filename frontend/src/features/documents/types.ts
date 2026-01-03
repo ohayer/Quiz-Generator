@@ -19,3 +19,10 @@ export interface TaskStatus {
     result?: TableOfContents;
     error?: string;
 }
+
+export interface DocumentSummary {
+    id: string;
+    name: string;
+    pdf_name: string;
+    total_pages: number;
+}
