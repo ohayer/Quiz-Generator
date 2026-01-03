@@ -8,7 +8,8 @@ from pydantic import Field
 class PDFDocument(Document):
     id: UUID = Field(default_factory=uuid4)
     name: str
-    pdf_file_id: Optional[str] = None  # ID referencing GridFS file
+    pdf_name: str
+    pdf_file_id: Optional[str] = None
     toc_model: Optional[Dict] = None
     quiz: dict = Field(default_factory=dict)
     total_pages: int = 0

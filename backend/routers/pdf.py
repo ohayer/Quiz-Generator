@@ -25,7 +25,10 @@ async def upload_pdf(
     if file_size > 16 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="File too large (max 16MB)")
 
-    task_id = await orchestrator.process_file_async(file, name)
+    try:
+        task_id = await orchestrator.process_file_async(file, name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return UploadResponse(task_id=task_id, status="uploaded")
 
 

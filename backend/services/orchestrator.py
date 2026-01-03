@@ -34,14 +34,19 @@ class Orchestrator:
         with open(temp_filename, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        file_name = name or file.filename or "Untitled.pdf"
+        if not name:
+            raise ValueError("Space name is required")
 
         self._tasks[task_id] = TaskStatus(task_id=task_id, status="uploading")
 
-        asyncio.create_task(self._process_task(task_id, temp_filename, file_name))
+        asyncio.create_task(
+            self._process_task(task_id, temp_filename, name, file.filename)
+        )
         return task_id
 
-    async def _process_task(self, task_id: str, temp_path: str, file_name: str):
+    async def _process_task(
+        self, task_id: str, temp_path: str, file_name: str, pdf_name: str
+    ):
         try:
             self._update_status(task_id, "uploading_to_db")
 
@@ -58,6 +63,7 @@ class Orchestrator:
 
             doc = PDFDocument(
                 name=file_name,
+                pdf_name=pdf_name,
                 pdf_file_id=str(file_id),
                 toc_model=None,
                 total_pages=page_count,
