@@ -1,28 +1,38 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi.params import Form
+from typing import Optional
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from backend.services.orchestrator import Orchestrator
+from backend.dependencies import get_orchestrator
 from backend.schemas.toc_api import UploadResponse, TaskStatus
 
 router = APIRouter()
-orchestrator = Orchestrator()
+
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(
+    file: UploadFile = File(...),
+    name: Optional[str] = Form(None),
+    orchestrator: Orchestrator = Depends(get_orchestrator),
+):
     if file.content_type != "application/pdf" and not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
-    
+
     # Check text file size
     file.file.seek(0, 2)
     file_size = file.file.tell()
     file.file.seek(0)
-    
+
     if file_size > 16 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="File too large (max 16MB)")
-    
-    task_id = await orchestrator.process_file_async(file)
+
+    task_id = await orchestrator.process_file_async(file, name)
     return UploadResponse(task_id=task_id, status="uploaded")
 
+
 @router.get("/status/{task_id}", response_model=TaskStatus)
-async def get_status(task_id: str):
+async def get_status(
+    task_id: str, orchestrator: Orchestrator = Depends(get_orchestrator)
+):
     status = orchestrator.get_status(task_id)
     if not status:
         raise HTTPException(status_code=404, detail="Task not found")

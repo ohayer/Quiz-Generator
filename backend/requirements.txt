@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+dotenv
 python-multipart
 pymupdf
 langchain
@@ -7,3 +8,5 @@ langchain-openai
 pydantic
 pytest
 httpx
+motor
+beanie

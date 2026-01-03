@@ -2,84 +2,119 @@ import asyncio
 import os
 import shutil
 import uuid
-from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
-
 import fitz
+
+from concurrent.futures import ThreadPoolExecutor
+from typing import Optional, Dict
+
 from fastapi import UploadFile
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 
 from backend.llm.agent.extraction_toc_agent import ToCExtractor
-from backend.schemas.toc_api import Section, TableOfContents, TaskStatus
+from backend.schemas.toc_api import TableOfContents, TaskStatus
+from backend.db.models import PDFDocument
+from backend.db.database import init_db
 
-_TASKS_STORE = {}
 
 class Orchestrator:
     def __init__(self):
-        self.executor = ThreadPoolExecutor(max_workers=3)
+        self._executor = ThreadPoolExecutor(max_workers=4)
+        self._tasks: Dict[str, TaskStatus] = {}
 
-    async def process_file_async(self, file: UploadFile) -> str:
+    async def get_database(self):
+        client, db = await init_db()
+        return db
+
+    async def process_file_async(
+        self, file: UploadFile, name: Optional[str] = None
+    ) -> str:
         task_id = str(uuid.uuid4())
-        _TASKS_STORE[task_id] = {"status": "uploading", "result": None}
-        
-        file_location = f"temp_{task_id}.pdf"
-        with open(file_location, "wb") as buffer:
+        temp_filename = f"temp_{task_id}.pdf"
+
+        with open(temp_filename, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
-        _TASKS_STORE[task_id]["status"] = "extracting"
-        asyncio.create_task(self._process_task(task_id, file_location))
-        
+
+        file_name = name or file.filename or "Untitled.pdf"
+
+        self._tasks[task_id] = TaskStatus(task_id=task_id, status="uploading")
+
+        asyncio.create_task(self._process_task(task_id, temp_filename, file_name))
         return task_id
 
-    async def _process_task(self, task_id: str, file_path: str):
+    async def _process_task(self, task_id: str, temp_path: str, file_name: str):
         try:
-            loop = asyncio.get_running_loop()
-            _TASKS_STORE[task_id]["status"] = "processing_llm"
-            
-            toc_result = await loop.run_in_executor(
-                self.executor, 
-                self._run_extraction, 
-                file_path
+            self._update_status(task_id, "uploading_to_db")
+
+            db = await self.get_database()
+            fs = AsyncIOMotorGridFSBucket(db)
+
+            with open(temp_path, "rb") as f:
+                file_id = await fs.upload_from_stream(
+                    file_name, f, metadata={"task_id": task_id}
+                )
+
+            with fitz.open(temp_path) as doc_pdf:
+                page_count = doc_pdf.page_count
+
+            doc = PDFDocument(
+                name=file_name,
+                pdf_file_id=str(file_id),
+                toc_model=None,
+                total_pages=page_count,
+                is_verified=False,
             )
-            
+            await doc.insert()
+
+            self._update_status(task_id, "extracting")
+
+            loop = asyncio.get_event_loop()
+            toc_result = await loop.run_in_executor(
+                self._executor, self._run_extraction, temp_path
+            )
+
             if toc_result:
-                api_sections = [
-                    Section(
-                        section_number=s.section_number, 
-                        title=s.title, 
-                        start_page=s.start_page
-                    ) for s in toc_result.sections
-                ]
-                _TASKS_STORE[task_id]["result"] = TableOfContents(sections=api_sections)
-                _TASKS_STORE[task_id]["status"] = "completed"
+                doc.toc_model = toc_result.model_dump()
+                await doc.save()
+
+                self._complete_task(task_id, toc_result)
             else:
-                _TASKS_STORE[task_id]["status"] = "failed"
-                _TASKS_STORE[task_id]["error"] = "No TOC found"
+                self._fail_task(task_id, "Could not extract Table of Contents")
 
         except Exception as e:
-            _TASKS_STORE[task_id]["status"] = "failed"
-            _TASKS_STORE[task_id]["error"] = str(e)
-            print(f"Error processing task {task_id}: {e}")
-        finally:
-            if os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                except PermissionError:
-                    pass
+            self._fail_task(task_id, str(e))
 
-    def _run_extraction(self, file_path: str):
-        doc = fitz.open(file_path)
-        try:
-            extractor = ToCExtractor(doc=doc)
-            return extractor.extract_toc()
         finally:
-            doc.close()
+            self._cleanup_temp_file(temp_path)
+
+    def _update_status(self, task_id: str, status: str):
+        if task_id in self._tasks:
+            self._tasks[task_id].status = status
+
+    def _complete_task(self, task_id: str, result: TableOfContents):
+        if task_id in self._tasks:
+            self._tasks[task_id].result = result
+            self._tasks[task_id].status = "completed"
+
+    def _fail_task(self, task_id: str, error: str):
+        if task_id in self._tasks:
+            self._tasks[task_id].status = "failed"
+            self._tasks[task_id].error = error
+
+    def _cleanup_temp_file(self, path: str):
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+    def _run_extraction(self, file_path: str) -> Optional[TableOfContents]:
+        try:
+            doc = fitz.open(file_path)
+            extractor = ToCExtractor(doc)
+            return extractor.extract_toc()
+        except Exception as e:
+            print(f"Extraction error: {e}")
+            return None
 
     def get_status(self, task_id: str) -> Optional[TaskStatus]:
-        task = _TASKS_STORE.get(task_id)
-        if not task:
-            return None
-        return TaskStatus(
-            task_id=task_id,
-            status=task["status"],
-            result=task["result"]
-        )
+        return self._tasks.get(task_id)

@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - pdf-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app/backend
+      - ./.env:/app/.env
+    env_file:
+      - .env
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - pdf-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/tsconfig.app.json:/app/tsconfig.app.json
+      - ./frontend/tsconfig.node.json:/app/tsconfig.node.json
+      - ./.env:/app/.env
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+    networks:
+      - pdf-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  pdf-network:
+    driver: bridge
