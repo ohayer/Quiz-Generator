@@ -27,3 +27,11 @@ export interface DocumentSummary {
     pdf_name: string;
     total_pages: number;
 }
+
+export interface Tab {
+    id: string;
+    type: 'toc' | 'preview' | 'quiz';
+    title: string;
+    // For preview
+    pages?: number[];
+}

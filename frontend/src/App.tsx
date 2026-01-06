@@ -2,6 +2,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { HomeView } from './features/workspaces';
 import { CreateWizard, WorkspaceView } from './features/documents';
 import './App.css';
+import './index.css';
 
 function App() {
   const navigate = useNavigate();

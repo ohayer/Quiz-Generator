@@ -29,7 +29,7 @@ async def get_document(doc_id: UUID):
 
 @router.patch("/{doc_id}", response_model=PDFDocument)
 async def update_document(doc_id: UUID, update_data: DocumentUpdate):
-    doc = await document_service.update_document_name(doc_id, update_data.name)
+    doc = await document_service.update_document(doc_id, update_data)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     return doc

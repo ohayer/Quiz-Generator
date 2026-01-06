@@ -1,5 +1,7 @@
+from typing import Optional, Dict
 from uuid import UUID
 from pydantic import BaseModel, Field
+from app.schemas.quiz import QuizConfig
 
 
 class DocumentSummary(BaseModel):
@@ -10,4 +12,7 @@ class DocumentSummary(BaseModel):
 
 
 class DocumentUpdate(BaseModel):
-    name: str
+    name: Optional[str] = None
+    is_verified: Optional[bool] = None
+    toc_model: Optional[Dict] = None
+    quiz_conf: Optional[QuizConfig] = None

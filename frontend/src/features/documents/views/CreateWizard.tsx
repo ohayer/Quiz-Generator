@@ -122,6 +122,17 @@ export const CreateWizard: React.FC = () => {
                                 ⚠ {error}
                             </div>
                         )}
+
+                        {!isLoading && status?.status === 'completed' && (
+                            <div className="mt-6 flex justify-center animate-in fade-in slide-in-from-bottom-2">
+                                <button
+                                    onClick={() => alert('CONTINUE...')}
+                                    className="px-8 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-indigo-500/25 active:scale-95 cursor-pointer"
+                                >
+                                    Continue →
+                                </button>
+                            </div>
+                        )}
                     </div>
                 );
         }

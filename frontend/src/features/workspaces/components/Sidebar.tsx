@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { WorkspacesList } from './WorkspacesList';
 import { useWorkspaces } from '../hooks/useWorkspaces';
 
@@ -10,6 +11,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSelectWorkspace }) => {
     const { workspaces, isLoading } = useWorkspaces();
+    const navigate = useNavigate();
 
     return (
         <>
@@ -49,6 +51,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onSelectWorks
                                 onClose();
                             }}
                         />
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-slate-800">
+                        <button
+                            onClick={() => {
+                                navigate('/');
+                                onClose();
+                            }}
+                            className="w-full py-3 px-4 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer font-medium"
+                        >
+                            <span>←</span> Back to Home
+                        </button>
                     </div>
                 </div>
             </div>

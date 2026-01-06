@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 
 from app.db.database import init_db
 from app.db.models import PDFDocument
-from app.schemas.documents import DocumentSummary
+from app.schemas.documents import DocumentSummary, DocumentUpdate
 
 
 class DocumentService:
@@ -90,14 +90,18 @@ class DocumentService:
             print(f"Error rendering page {page_number} for doc {doc_id}: {e}")
             return None
 
-    async def update_document_name(
-        self, doc_id: UUID, new_name: str
+    async def update_document(
+        self, doc_id: UUID, update_data: DocumentUpdate
     ) -> Optional[PDFDocument]:
         try:
             doc = await PDFDocument.get(doc_id)
             if not doc:
                 return None
-            doc.name = new_name
+
+            updates = update_data.model_dump(exclude_unset=True)
+            for field, value in updates.items():
+                setattr(doc, field, value)
+
             await doc.save()
             return doc
         except Exception as e:

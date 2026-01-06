@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getBackendUrl } from '../../../config';
 import type { TableOfContents } from '../types';
+import type { QuizConfig } from '../../quiz/types';
 
 interface DocumentDetails {
     id: string;
@@ -8,6 +9,7 @@ interface DocumentDetails {
     total_pages: number;
     toc_model?: TableOfContents;
     is_verified: boolean;
+    quiz_conf?: QuizConfig;
 }
 
 export const useDocument = (id: string | undefined) => {
@@ -37,20 +39,20 @@ export const useDocument = (id: string | undefined) => {
         fetchDocument();
     }, [fetchDocument]);
 
-    const updateName = useCallback(async (newName: string) => {
-        if (!id) return;
+    const updateDocument = useCallback(async (updates: Partial<DocumentDetails>) => {
+        if (!id) return false;
         try {
             const response = await fetch(`${getBackendUrl()}/api/documents/${id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ name: newName }),
+                body: JSON.stringify(updates),
             });
-            if (!response.ok) throw new Error('Failed to update document name');
+            if (!response.ok) throw new Error('Failed to update document');
 
-            // Optimistic update or refetch
-            setDocument(prev => prev ? { ...prev, name: newName } : null);
+            // Update local state
+            setDocument(prev => prev ? { ...prev, ...updates } : null);
             return true;
         } catch (err) {
             console.error(err);
@@ -58,5 +60,26 @@ export const useDocument = (id: string | undefined) => {
         }
     }, [id]);
 
-    return { document, isLoading, error, refresh: fetchDocument, updateName };
+    const updateName = (newName: string) => updateDocument({ name: newName });
+    const approveToc = () => updateDocument({ is_verified: true });
+
+    const rejectTocConfirm = useCallback(async () => {
+        if (!id) return false;
+        try {
+            const response = await fetch(`${getBackendUrl()}/api/documents/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ toc_model: null, is_verified: false }),
+            });
+            if (!response.ok) throw new Error('Failed to reject TOC');
+
+            setDocument(prev => prev ? { ...prev, toc_model: undefined, is_verified: false } : null);
+            return true;
+        } catch (err) {
+            console.error(err);
+            return false;
+        }
+    }, [id]);
+
+    return { document, isLoading, error, refresh: fetchDocument, updateName, approveToc, rejectToc: rejectTocConfirm };
 };
