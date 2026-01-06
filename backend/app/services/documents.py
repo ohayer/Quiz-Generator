@@ -5,9 +5,9 @@ import fitz
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 
-from backend.db.database import init_db
-from backend.db.models import PDFDocument
-from backend.schemas.documents import DocumentSummary
+from app.db.database import init_db
+from app.db.models import PDFDocument
+from app.schemas.documents import DocumentSummary
 
 
 class DocumentService:

@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 from beanie import Document
 from pydantic import Field
+from app.schemas.quiz import QuizConfig
 
 
 class PDFDocument(Document):
@@ -11,6 +12,7 @@ class PDFDocument(Document):
     pdf_name: str
     pdf_file_id: Optional[str] = None
     toc_model: Optional[Dict] = None
+    quiz_conf: Optional[QuizConfig] = None
     quiz: dict = Field(default_factory=dict)
     total_pages: int = 0
     is_verified: bool = False

@@ -1,10 +1,10 @@
 from typing import List
 from uuid import UUID
 from fastapi import APIRouter, HTTPException
-from backend.db.models import PDFDocument
+from app.db.models import PDFDocument
 from fastapi.responses import Response
-from backend.services.documents import document_service
-from backend.schemas.documents import DocumentSummary, DocumentUpdate
+from app.services.documents import document_service
+from app.schemas.documents import DocumentSummary, DocumentUpdate
 
 router = APIRouter()
 

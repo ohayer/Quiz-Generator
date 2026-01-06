@@ -10,10 +10,13 @@ from typing import Optional, Dict
 from fastapi import UploadFile
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 
-from backend.llm.agent.extraction_toc_agent import ToCExtractor
-from backend.schemas.toc_api import TableOfContents, TaskStatus
-from backend.db.models import PDFDocument
-from backend.db.database import init_db
+from app.core.llm.agent.extraction_toc_agent import ToCExtractor
+
+from app.schemas.quiz import QuizConfig
+
+from app.db.models import PDFDocument
+from app.schemas.toc_api import TaskStatus, TableOfContents
+from app.db.database import init_db
 
 
 class Orchestrator:
@@ -44,6 +47,36 @@ class Orchestrator:
         )
         return task_id
 
+    async def generate_quiz_async(self, doc_id: str, config: QuizConfig) -> str:
+        task_id = str(uuid.uuid4())
+        self._tasks[task_id] = TaskStatus(task_id=task_id, status="processing_llm")
+
+        asyncio.create_task(self._process_quiz_generation(task_id, doc_id, config))
+        return task_id
+
+    async def _process_quiz_generation(
+        self, task_id: str, doc_id: str, config: QuizConfig
+    ):
+        try:
+            await self.get_database()
+            doc = await PDFDocument.get(uuid.UUID(doc_id))
+            if not doc:
+                self._fail_task(task_id, "Document not found")
+                return
+
+            doc.quiz_conf = config
+            await doc.save()
+
+            # Placeholder step as requested
+            self._update_status(task_id, "Inserting quiz configuration into process")
+
+            # TODO: generate questions with LLM
+            await asyncio.sleep(1)
+            self._tasks[task_id].status = "completed"
+
+        except Exception as e:
+            self._fail_task(task_id, str(e))
+
     async def _process_task(
         self, task_id: str, temp_path: str, file_name: str, pdf_name: str
     ):
@@ -70,6 +103,8 @@ class Orchestrator:
                 is_verified=False,
             )
             await doc.insert()
+            if task_id in self._tasks:
+                self._tasks[task_id].doc_id = doc.id
 
             self._update_status(task_id, "extracting")
 

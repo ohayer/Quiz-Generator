@@ -212,12 +212,10 @@ class ManualToCExtractor:
         for entry in line_entries:
             text = entry["text"]
             if entry["target_pages"]:
-                # Example: "[links->pages: 5]" or "[links->pages: 5, 7]"
                 pages_str = ", ".join(str(p) for p in sorted(entry["target_pages"]))
                 text = f"{text} [links->pages: {pages_str}]"
             lines_with_markers.append(text)
 
         marked_text = "\n".join(lines_with_markers)
 
-        # Clean text 
         return self.cleaner.clean(marked_text)

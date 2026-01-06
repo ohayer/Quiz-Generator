@@ -5,12 +5,12 @@ from typing import Optional
 
 import fitz
 
-from backend.llm.config import load_settings
-from backend.llm.model import LangChainConnection
-from backend.llm.rag_service import LangChainRAGService
+from app.core.llm.config import load_settings
+from app.core.llm.model import LangChainConnection
+from app.core.llm.rag_service import LangChainRAGService
 
-from backend.pdf.toc.manual_extractor import ManualToCExtractor
-from backend.pdf.toc.toc_model import Section, TableOfContents
+from app.core.pdf.toc.manual_extractor import ManualToCExtractor
+from app.core.pdf.toc.toc_model import Section, TableOfContents
 
 SYSTEM_MESSAGE = """You are a precision parser for Table of Contents.
 Your task is to flatten the Table of Contents into a single list of items.

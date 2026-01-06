@@ -6,7 +6,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel
 
-from backend.llm.model import LangChainConnection
+from app.core.llm.model import LangChainConnection
 
 T = TypeVar("T", bound=BaseModel)
 

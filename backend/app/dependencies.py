@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from backend.services.orchestrator import Orchestrator
+from app.services.orchestrator import Orchestrator
 
 
 @lru_cache()

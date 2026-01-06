@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from uuid import UUID
 
 
 class Section(BaseModel):
@@ -21,4 +22,5 @@ class TaskStatus(BaseModel):
     task_id: str
     status: str
     result: Optional[TableOfContents] = None
+    doc_id: Optional[UUID] = None
     error: Optional[str] = None

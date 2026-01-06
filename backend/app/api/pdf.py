@@ -1,9 +1,9 @@
 from fastapi.params import Form
 from typing import Optional
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
-from backend.services.orchestrator import Orchestrator
-from backend.dependencies import get_orchestrator
-from backend.schemas.toc_api import UploadResponse, TaskStatus
+from app.services.orchestrator import Orchestrator
+from app.dependencies import get_orchestrator
+from app.schemas.toc_api import UploadResponse, TaskStatus
 
 router = APIRouter()
 

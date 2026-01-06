@@ -1,7 +1,7 @@
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
-from backend.db.models import PDFDocument
+from app.db.models import PDFDocument
 
 
 async def init_db():

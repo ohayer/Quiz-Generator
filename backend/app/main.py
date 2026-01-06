@@ -5,8 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from backend.routers import pdf  # noqa: E402
-from backend.routers import documents  # noqa: E402
+from app.api import documents, pdf, quiz  # noqa: E402
 
 app = FastAPI(title="PDF TOC Extractor")
 
@@ -21,6 +20,7 @@ app.add_middleware(
 app.include_router(pdf.router, prefix="/api/pdf", tags=["pdf"])
 
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
+app.include_router(quiz.router, prefix="/api/quiz", tags=["quiz"])
 
 
 @app.get("/")
@@ -37,6 +37,6 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.on_event("startup")
 async def on_startup():
-    from backend.db.database import init_db
+    from app.db.database import init_db
 
     await init_db()
