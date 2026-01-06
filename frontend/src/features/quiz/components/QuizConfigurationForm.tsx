@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { QuizConfig, QuizScope, QuestionConfig } from '../types';
 import type { TableOfContents } from '../../documents/types';
+import { NumberInput } from '../../../components/ui/NumberInput';
 import aiIcon from '../../../assets/ai.png';
 
 interface QuizConfigurationFormProps {
@@ -30,7 +31,7 @@ export const QuizConfigurationForm: React.FC<QuizConfigurationFormProps> = ({ to
                 // Add new default questions
                 for (let i = prev.length; i < totalQuestions; i++) {
                     newQuestions.push({
-                        type: 'closed',
+                        type: 'single_choice',
                         closedOptions: { count: 4, correctCount: 1 }
                     });
                 }
@@ -49,12 +50,26 @@ export const QuizConfigurationForm: React.FC<QuizConfigurationFormProps> = ({ to
     const updateClosedOptions = (index: number, updates: Partial<{ count: number; correctCount: number }>) => {
         setQuestions(prev => prev.map((q, i) => {
             if (i !== index) return q;
+
+
+            const currentOptions = q.closedOptions!;
+            const newOptions = { ...currentOptions, ...updates };
+
+            // Correct count cannot exceed total count
+            if (newOptions.correctCount > newOptions.count) {
+                newOptions.correctCount = newOptions.count;
+            }
+
+            //Multiple choice must have at least 2 correct answers
+            if (q.type === 'multiple_choice') {
+                if (newOptions.correctCount < 2) newOptions.correctCount = 2;
+            } else if (q.type === 'single_choice' || q.type === 'true_false') {
+                newOptions.correctCount = 1;
+            }
+
             return {
                 ...q,
-                closedOptions: {
-                    ...q.closedOptions!,
-                    ...updates
-                }
+                closedOptions: newOptions
             };
         }));
     };
@@ -136,42 +151,45 @@ export const QuizConfigurationForm: React.FC<QuizConfigurationFormProps> = ({ to
                     <div className="flex gap-4">
                         {scope === 'range' && (
                             <>
-                                <input
-                                    type="number" min={1} max={maxPages}
+                                <NumberInput
                                     value={pageRange.start}
-                                    onChange={(e) => {
-                                        let val = parseInt(e.target.value);
-                                        if (val > maxPages) val = maxPages;
-                                        if (val < 1) val = 1;
-                                        setPageRange({ ...pageRange, start: val });
+                                    min={1}
+                                    max={maxPages}
+                                    onChange={(val) => {
+                                        let v = val;
+                                        if (v > maxPages) v = maxPages;
+                                        if (v < 1) v = 1;
+                                        setPageRange({ ...pageRange, start: v });
                                     }}
-                                    className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                                    className="flex-1"
                                     placeholder="From"
                                 />
-                                <input
-                                    type="number" min={pageRange.start} max={maxPages}
+                                <NumberInput
                                     value={pageRange.end}
-                                    onChange={(e) => {
-                                        let val = parseInt(e.target.value);
-                                        if (val > maxPages) val = maxPages;
-                                        setPageRange({ ...pageRange, end: val });
+                                    min={pageRange.start}
+                                    max={maxPages}
+                                    onChange={(val) => {
+                                        let v = val;
+                                        if (v > maxPages) v = maxPages;
+                                        setPageRange({ ...pageRange, end: v });
                                     }}
-                                    className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                                    className="flex-1"
                                     placeholder="To"
                                 />
                             </>
                         )}
                         {scope === 'page' && (
-                            <input
-                                type="number" min={1} max={maxPages}
+                            <NumberInput
                                 value={singlePage}
-                                onChange={(e) => {
-                                    let val = parseInt(e.target.value);
-                                    if (val > maxPages) val = maxPages;
-                                    if (val < 1) val = 1;
-                                    setSinglePage(val);
+                                min={1}
+                                max={maxPages}
+                                onChange={(val) => {
+                                    let v = val;
+                                    if (v > maxPages) v = maxPages;
+                                    if (v < 1) v = 1;
+                                    setSinglePage(v);
                                 }}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                                className="w-full"
                                 placeholder="Page number"
                             />
                         )}
@@ -221,51 +239,69 @@ export const QuizConfigurationForm: React.FC<QuizConfigurationFormProps> = ({ to
                     <div key={idx} className="bg-slate-950 border border-slate-800 rounded-xl p-4 transition-all hover:border-slate-700">
                         <div className="flex items-center justify-between mb-3">
                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Question {idx + 1}</span>
-                            <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-800">
-                                <button
-                                    onClick={() => updateQuestion(idx, { type: 'closed', closedOptions: { count: 4, correctCount: 1 } })}
-                                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${q.type === 'closed' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-slate-300'
-                                        }`}
-                                >
-                                    Closed
-                                </button>
+                            <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-800 gap-1">
                                 <button
                                     onClick={() => updateQuestion(idx, { type: 'open', closedOptions: undefined })}
-                                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${q.type === 'open' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-slate-300'
-                                        }`}
+                                    className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${q.type === 'open' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-slate-300'}`}
                                 >
                                     Open
+                                </button>
+                                <button
+                                    onClick={() => updateQuestion(idx, { type: 'single_choice', closedOptions: { count: 4, correctCount: 1 } })}
+                                    className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${q.type === 'single_choice' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-slate-300'}`}
+                                >
+                                    Single
+                                </button>
+                                <button
+                                    onClick={() => updateQuestion(idx, { type: 'multiple_choice', closedOptions: { count: 4, correctCount: 2 } })}
+                                    className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${q.type === 'multiple_choice' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-slate-300'}`}
+                                >
+                                    Multi
+                                </button>
+                                <button
+                                    onClick={() => updateQuestion(idx, { type: 'true_false', closedOptions: { count: 2, correctCount: 1 } })}
+                                    className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${q.type === 'true_false' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-slate-300'}`}
+                                >
+                                    T/F
                                 </button>
                             </div>
                         </div>
 
-                        {q.type === 'closed' && q.closedOptions && (
+                        {(q.type === 'single_choice' || q.type === 'multiple_choice') && q.closedOptions && (
                             <div className="grid grid-cols-2 gap-4 mt-3 bg-slate-900/50 p-3 rounded-lg border border-slate-800/50">
                                 <div>
                                     <label className="block text-slate-500 text-[10px] uppercase mb-1">Options</label>
-                                    <input
-                                        type="number"
-                                        min="2"
-                                        max="6"
+                                    <NumberInput
                                         value={q.closedOptions.count}
-                                        onChange={(e) => updateClosedOptions(idx, { count: parseInt(e.target.value) })}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-md p-1.5 text-white text-sm"
+                                        min={2}
+                                        max={6}
+                                        onChange={(val) => updateClosedOptions(idx, { count: val })}
                                     />
                                     <div className="text-[10px] text-slate-600 mt-1 pl-1">
-                                        Options: A - {String.fromCharCode(64 + q.closedOptions.count)}
+                                        Max: 6
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-slate-500 text-[10px] uppercase mb-1">Correct Answers</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max={q.closedOptions.count}
-                                        value={q.closedOptions.correctCount}
-                                        onChange={(e) => updateClosedOptions(idx, { correctCount: parseInt(e.target.value) })}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-md p-1.5 text-white text-sm"
-                                    />
+                                    {q.type === 'single_choice' ? (
+                                        <div className="flex items-center h-8 px-3 text-sm text-slate-500 bg-slate-950/50 border border-slate-800/50 rounded-lg">
+                                            1
+                                        </div>
+                                    ) : (
+                                        <NumberInput
+                                            value={q.closedOptions.correctCount}
+                                            min={q.type === 'multiple_choice' ? 2 : 1}
+                                            max={q.closedOptions.count}
+                                            onChange={(val) => updateClosedOptions(idx, { correctCount: val })}
+                                        />
+                                    )}
                                 </div>
+                            </div>
+                        )}
+
+                        {q.type === 'true_false' && (
+                            <div className="mt-2 text-xs text-slate-500 italic px-2">
+                                True / False options.
                             </div>
                         )}
 

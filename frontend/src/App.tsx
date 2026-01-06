@@ -1,7 +1,6 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { HomeView } from './features/workspaces/components/HomeView';
-import { CreateWizard } from './features/documents/components/views/CreateWizard';
-import { WorkspaceView } from './features/documents/components/views/WorkspaceView';
+import { HomeView } from './features/workspaces';
+import { CreateWizard, WorkspaceView } from './features/documents';
 import './App.css';
 
 function App() {

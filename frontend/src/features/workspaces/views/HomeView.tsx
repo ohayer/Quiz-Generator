@@ -1,5 +1,5 @@
 import React from 'react';
-import { WorkspacesList } from './WorkspacesList';
+import { WorkspacesList } from '../components/WorkspacesList';
 import { useWorkspaces } from '../hooks/useWorkspaces';
 
 interface HomeViewProps {

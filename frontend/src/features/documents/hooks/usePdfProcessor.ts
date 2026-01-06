@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { TaskStatus } from '../types'
+import type { QuizConfig } from '../../quiz/types';
 import { getBackendUrl } from '../../../config';
 
 export const usePdfProcessor = () => {
@@ -58,11 +59,38 @@ export const usePdfProcessor = () => {
         }
     }, [pollStatus]);
 
+    const generateQuiz = useCallback(async (docId: string, config: QuizConfig) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`${getBackendUrl()}/api/quiz/${docId}/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Failed to start quiz generation');
+            }
+
+            const data = await response.json();
+            if (data.task_id) {
+                setTaskId(data.task_id);
+                pollStatus(data.task_id);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+            setIsLoading(false);
+        }
+    }, [pollStatus]);
+
     return {
         uploadPdf,
         status,
         isLoading,
         error,
-        taskId
+        taskId,
+        generateQuiz
     };
 };

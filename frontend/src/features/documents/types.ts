@@ -17,6 +17,7 @@ export interface TaskStatus {
     task_id: string;
     status: 'uploading' | 'extracting' | 'processing_llm' | 'completed' | 'failed';
     result?: TableOfContents;
+    doc_id?: string;
     error?: string;
 }
 

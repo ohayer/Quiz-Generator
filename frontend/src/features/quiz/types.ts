@@ -1,5 +1,5 @@
 export type QuizScope = 'document' | 'chapter' | 'range' | 'page';
-export type QuestionType = 'open' | 'closed';
+export type QuestionType = 'open' | 'multiple_choice' | 'single_choice' | 'true_false';
 
 export interface QuestionConfig {
     type: QuestionType;

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useDocument } from '../../hooks/useDocument';
-import { DashboardLayout } from '../../../../components/layout/DashboardLayout';
-import { ResultsView } from '../toc/ResultsView';
-import { TocReview } from '../toc/TocReview';
-import { QuizConfigurationForm } from '../../../quiz/components/QuizConfigurationForm';
-import { PdfPreview } from '../toc/PdfPreview';
-import type { QuizConfig, QuizScope } from '../../../quiz/types';
+import { useDocument } from '../hooks/useDocument';
+import { DashboardLayout } from '../../../components/layout/DashboardLayout';
+import { ResultsView } from '../components/toc/ResultsView';
+import { TocReview } from '../components/toc/TocReview';
+import { QuizConfigurationForm } from '../../quiz';
+import { PdfPreview } from '../components/toc/PdfPreview';
+import type { QuizConfig, QuizScope } from '../../quiz';
 
 type ViewMode = 'details' | 'quiz';
 
