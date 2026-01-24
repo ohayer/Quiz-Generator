@@ -11,6 +11,7 @@ from fastapi import UploadFile
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 
 from app.core.llm.agent.extraction_toc_agent import ToCExtractor
+from app.services.quiz_service import QuizService
 
 from app.schemas.quiz import QuizConfig
 
@@ -67,12 +68,20 @@ class Orchestrator:
             doc.quiz_conf = config
             await doc.save()
 
-            # Placeholder step as requested
-            self._update_status(task_id, "Inserting quiz configuration into process")
+            # Generate questions with QuizService
+            self._update_status(task_id, "Generating questions with AI...")
 
-            # TODO: generate questions with LLM
-            await asyncio.sleep(1)
-            self._tasks[task_id].status = "completed"
+            quiz_service = QuizService()
+            db = await self.get_database()
+            result = await quiz_service.generate_quiz_content(doc_id, db)
+
+            if result:
+                self._tasks[
+                    task_id
+                ].result = result.model_dump()  # Store generic result
+                self._tasks[task_id].status = "completed"
+            else:
+                self._fail_task(task_id, "Failed to generate quiz content")
 
         except Exception as e:
             self._fail_task(task_id, str(e))

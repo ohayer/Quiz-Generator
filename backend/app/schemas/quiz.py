@@ -22,14 +22,6 @@ class QuestionConfig(BaseModel):
     closedOptions: Optional[dict] = None  # count, correctCount
 
 
-class QuizConfigInput(BaseModel):
-    scope: QuizConfigScope
-    selectedChapter: Optional[str] = None
-    pageRange: Optional[dict] = None  # start, end
-    singlePage: Optional[int] = None
-    questions: List[QuestionConfig]
-
-
 class QuizConfig(BaseModel):
     scope: QuizConfigScope
     selectedChapter: Optional[str] = None
@@ -38,7 +30,17 @@ class QuizConfig(BaseModel):
     questions: List[QuestionConfig]
 
 
-class QuizModelInput(BaseModel):
-    questionNumber: int
-    questionType: QuestionType
-    context: str
+class QuizAnswer(BaseModel):
+    text: str
+    is_correct: bool
+
+
+class GeneratedQuestion(BaseModel):
+    id: int
+    text: str
+    type: QuestionType
+    answers: List[QuizAnswer]
+
+
+class QuizOutput(BaseModel):
+    questions: List[GeneratedQuestion]

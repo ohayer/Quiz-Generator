@@ -95,7 +95,7 @@ A modern, full-stack web application designed to process PDF documents, extract 
     ```env
     OPENAI_API_KEY=your_api_key_here
     MONGODB_URL=mongodb://localhost:27017
-    MONGODB_DB_NAME=pdf_processor
+    MONGODB_DB_NAME=quiz
     ```
 
 4.  **Run the server**:
