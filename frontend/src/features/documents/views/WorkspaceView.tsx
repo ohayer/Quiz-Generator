@@ -6,7 +6,7 @@ import { usePdfProcessor } from '../hooks/usePdfProcessor';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { ResultsView } from '../components/toc/ResultsView';
 import { TocReview } from '../components/toc/TocReview';
-import { QuizConfigurationForm } from '../../quiz';
+import { QuizConfigurationForm, QuizExecutionView } from '../../quiz';
 import { PdfPreview } from '../components/toc/PdfPreview';
 import type { QuizConfig, QuizScope } from '../../quiz';
 import type { Tab } from '../types';
@@ -29,6 +29,37 @@ export const WorkspaceView: React.FC = () => {
         { id: 'toc', type: 'toc', title: 'Table of Contents' }
     ]);
     const [activeTabId, setActiveTabId] = useState<string>('toc');
+    // Reset state when ID changes
+    React.useEffect(() => {
+        setTabs([{ id: 'toc', type: 'toc', title: 'Table of Contents' }]);
+        setActiveTabId('toc');
+        setViewMode('details');
+    }, [id]);
+
+    // Sync tabs with document state
+    React.useEffect(() => {
+        if (document?.quiz?.questions?.length && document.quiz.questions.length > 0 && !tabs.find(t => t.id === 'quiz')) {
+            setTabs(prev => {
+                if (prev.find(t => t.id === 'quiz')) return prev;
+                // Prepend quiz tab so it appears first
+                return [{ id: 'quiz', type: 'quiz', title: 'Exam' }, ...prev];
+            });
+            // Default to quiz view if available
+            setActiveTabId('quiz');
+        }
+    }, [document, tabs]);
+
+    // Handle succesful generation
+    React.useEffect(() => {
+        if (quizStatus?.quiz_result && !tabs.find(t => t.id === 'quiz')) {
+            setTabs(prev => {
+                if (prev.find(t => t.id === 'quiz')) return prev;
+                // Prepend quiz tab
+                return [{ id: 'quiz', type: 'quiz', title: 'Exam' }, ...prev];
+            });
+            setActiveTabId('quiz');
+        }
+    }, [quizStatus, tabs]);
 
     const handleBack = () => {
         if (viewMode === 'quiz') {
@@ -42,8 +73,10 @@ export const WorkspaceView: React.FC = () => {
         if (!id) return;
         generateQuiz(id, config);
         setTabs(prev => {
-            const newTabs = prev.filter(t => t.id !== 'toc');
-            return [...newTabs, { id: 'quiz', type: 'quiz', title: 'Quiz' }];
+            // Ensure we don't duplicate
+            if (prev.find(t => t.id === 'quiz')) return prev;
+            // Prepend quiz tab
+            return [{ id: 'quiz', type: 'quiz', title: 'Exam' }, ...prev];
         });
         setActiveTabId('quiz');
         setViewMode('details');
@@ -167,52 +200,78 @@ export const WorkspaceView: React.FC = () => {
                             />
                         )}
                         {activeTab?.type === 'quiz' && (
-                            <div className="p-8 flex flex-col items-center justify-center h-full text-slate-400">
-                                <div className="max-w-md w-full animate-in fade-in slide-in-from-top-4 duration-500">
-                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-8 text-center">
-                                        {isQuizLoading ? 'Generating Exam...' : 'Exam Ready'}
-                                    </h3>
-                                    {isQuizLoading && (
-                                        <div className="flex flex-col gap-6 py-4">
-                                            <div className="flex items-center gap-4 group bg-slate-900/50 p-4 rounded-lg border border-slate-800">
-                                                <div className="w-8 h-8 rounded-full flex items-center justify-center border border-indigo-500 bg-indigo-500/10 text-indigo-400 transition-all duration-300 flex-none">
-                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                    </svg>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-medium text-slate-200">
-                                                        Inserting quiz configuration into process
-                                                    </span>
-                                                    <span className="text-xs text-indigo-400/70 animate-pulse">Processing...</span>
+                            <div className={`
+                                w-full h-full 
+                                ${(!isQuizLoading && (quizStatus?.quiz_result || document?.quiz))
+                                    ? 'flex flex-col'
+                                    : 'flex flex-col items-center justify-center p-8'}
+                            `}>
+                                {!isQuizLoading && (quizStatus?.quiz_result || document?.quiz) ? (
+                                    // Full view for exam
+                                    <div className="w-full h-full flex flex-col">
+                                        <div className="flex-1 overflow-hidden relative">
+                                            <QuizExecutionView quiz={(quizStatus?.quiz_result || document?.quiz)!} />
+                                        </div>
+                                        <div className="flex justify-center py-4 bg-slate-950 border-t border-slate-800 flex-none">
+                                            <button
+                                                onClick={() => {
+                                                    const conf = document?.quiz_conf;
+                                                    if (conf) setViewMode('quiz');
+                                                }}
+                                                className="px-6 py-2 text-indigo-400 hover:text-white transition-colors cursor-pointer text-sm"
+                                            >
+                                                ← Regenerate / Edit Configuration
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    // Centered view for loading/error/empty
+                                    <div className="max-w-md w-full animate-in fade-in slide-in-from-top-4 duration-500">
+                                        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-8 text-center">
+                                            {isQuizLoading ? 'Generating Exam...' : 'Exam Ready'}
+                                        </h3>
+
+                                        {isQuizLoading && (
+                                            <div className="flex flex-col gap-6 py-4">
+                                                <div className="flex items-center gap-4 group bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center border border-indigo-500 bg-indigo-500/10 text-indigo-400 transition-all duration-300 flex-none">
+                                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-medium text-slate-200">
+                                                            Inserting quiz configuration into process
+                                                        </span>
+                                                        <span className="text-xs text-indigo-400/70 animate-pulse">Processing...</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    )}
-                                    {quizError && (
-                                        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-200 text-sm">
-                                            ⚠ {quizError}
-                                        </div>
-                                    )}
-                                    {!isQuizLoading && quizStatus?.status === 'completed' && (
-                                        <div className="mt-6 flex justify-center animate-in fade-in slide-in-from-bottom-2">
+                                        )}
+
+                                        {quizError && (
+                                            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-200 text-sm">
+                                                ⚠ {quizError}
+                                            </div>
+                                        )}
+
+                                        {!isQuizLoading && !quizStatus?.quiz_result && !document?.quiz && (
                                             <div className="text-center space-y-4">
-                                                <div className="text-indigo-400 text-6xl">✨</div>
-                                                <p className="text-xl text-white font-semibold">Quiz Generated Successfully!</p>
+                                                <p className="text-slate-500">No quiz generated yet.</p>
                                                 <button
-                                                    onClick={() => alert('Start Quiz...')}
-                                                    className="px-8 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-indigo-500/25 active:scale-95 cursor-pointer"
+                                                    onClick={() => setViewMode('quiz')}
+                                                    className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors"
                                                 >
-                                                    Start Quiz →
+                                                    Configure & Generate
                                                 </button>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
-                </div>
+                </div >
             }
             onSelectWorkspace={(newId) => navigate(`/workspace/${newId}`)}
         />

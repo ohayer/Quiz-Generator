@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getBackendUrl } from '../../../config';
 import type { TableOfContents } from '../types';
-import type { QuizConfig } from '../../quiz/types';
+import type { QuizConfig, QuizOutput } from '../../quiz/types';
 
 interface DocumentDetails {
     id: string;
@@ -10,6 +10,7 @@ interface DocumentDetails {
     toc_model?: TableOfContents;
     is_verified: boolean;
     quiz_conf?: QuizConfig;
+    quiz?: QuizOutput;
 }
 
 export const useDocument = (id: string | undefined) => {

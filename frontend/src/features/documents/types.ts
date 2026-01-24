@@ -13,10 +13,13 @@ export interface UploadResponse {
     status: string;
 }
 
+import type { QuizOutput } from '../quiz/types';
+
 export interface TaskStatus {
     task_id: string;
     status: 'uploading' | 'extracting' | 'processing_llm' | 'completed' | 'failed';
     result?: TableOfContents;
+    quiz_result?: QuizOutput;
     doc_id?: string;
     error?: string;
 }

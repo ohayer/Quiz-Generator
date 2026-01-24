@@ -26,7 +26,7 @@ export const WorkspaceTabs: React.FC<WorkspaceTabsProps> = ({ tabs, activeTabId,
                         {tab.type === 'toc' ? '📑' : tab.type === 'quiz' ? '📝' : '👁'}
                     </span>
                     <span>{tab.title}</span>
-                    {tab.type !== 'toc' && (
+                    {tab.type !== 'toc' && tab.type !== 'quiz' && (
                         <button
                             onClick={(e) => onTabClose(e, tab.id)}
                             className="ml-2 w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-700 text-slate-500 hover:text-white transition-colors cursor-pointer"

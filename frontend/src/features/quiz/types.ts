@@ -16,3 +16,19 @@ export interface QuizConfig {
     singlePage?: number;
     questions: QuestionConfig[];
 }
+
+export interface QuizAnswer {
+    text: string;
+    is_correct: boolean;
+}
+
+export interface GeneratedQuestion {
+    id: number;
+    text: string;
+    type: QuestionType;
+    answers: QuizAnswer[];
+}
+
+export interface QuizOutput {
+    questions: GeneratedQuestion[];
+}
